@@ -60,7 +60,7 @@
               echo database: `pwd`/.litdb.git >> litconfig
               export LIT_CONFIG=`pwd`/litconfig
               ln -s ${deps}/deps ./deps
-              lit make . ./$pname ${luviBase} || echo "work around bug"
+              lit make . ./$pname ${luviBase} | cat || echo "work around bug"
               runHook postBuild
             '';
             installPhase = ''
@@ -165,13 +165,17 @@
 
           nativeBuildInputs = [ selfPkgs.luvi ];
           buildPhase = ''
+            runHook preBuild
             echo database: `pwd`/.litdb.git >> litconfig
             export LIT_CONFIG=`pwd`/litconfig
-            luvi . -- make . ./lit ${selfLib.luviBase} || echo work around bug
+            set -x
+            ${pkgs.lib.getExe pkgs.strace} luvi . -- make . ./lit ${selfLib.luviBase}
+            runHook postBuild
           '';
           installPhase = ''
-            mkdir -p $out/bin
-            cp lit $out/bin/lit
+            runHook preInstall
+            install -D -m 755 lit $out/bin/lit
+            runHook postInstall
           '';
 
           meta = {
